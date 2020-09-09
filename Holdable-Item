@@ -1,0 +1,76 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(ItemNoiseCreator))]
+public class HoldableItem : MonoBehaviour, IHoldable
+{
+    [Header("Preset")]
+    [SerializeField] Transform itemHolder;
+    public float throwForces;
+    public bool canThrow;
+    Transform oriParent;
+
+    [HideInInspector]public bool threw;
+
+    private void Awake()
+    {
+        oriParent = transform.parent.GetComponentInParent<Transform>();
+    }
+   
+    public IHoldable PickUpItem()
+    { 
+        GetComponent<Rigidbody>().isKinematic = true;
+        GetComponent<Collider>().enabled = false;
+
+        transform.SetParent(itemHolder);
+        gameObject.layer = LayerMask.NameToLayer("Default");
+        transform.position = itemHolder.position;
+        transform.rotation = itemHolder.rotation;
+
+        if (canThrow)
+        {
+            Holding.ThrowUI.SetActive(true);
+        }
+        else
+        {
+            Holding.ThrowUI.SetActive(false);
+        }
+
+        return this;
+    }
+
+    // Update is called once per frame
+    public void DropItem()
+    {
+            GetComponent<Rigidbody>().isKinematic = false;
+            GetComponent<Collider>().enabled = true;
+
+            transform.SetParent(oriParent);
+            gameObject.layer = 13;
+            Holding.ThrowUI.SetActive(false);
+    }
+
+    public void Destroy()
+    {
+        Destroy(this.gameObject);
+    }
+
+    public void ThrowItem()
+    {
+        if (canThrow)
+        {
+            DropItem();
+
+            Vector3 Camdir = Camera.main.transform.forward;         //get camera forward direction
+
+            GetComponent<Rigidbody>().AddForce(Camdir * throwForces);
+            threw = true;
+        }
+        else
+        {
+            DropItem();
+        }
+    }
+}
