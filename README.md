@@ -1,4 +1,4 @@
 # Happy-Birthday
 Intern Project
 
-All this code was learnt and write during the insternship
+All this code was learnt and write during the internship
