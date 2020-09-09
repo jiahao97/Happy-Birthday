@@ -1,0 +1,54 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PowerStation : MonoBehaviour, IActivatable
+{
+    public bool activated { get; set; }
+
+    [Header("presets")]
+    public GameObject[] activeLight;
+    public GameObject[] activeObj;
+    public IActivatable[] toActive;
+
+    private void Start()
+    {
+        activated = true;
+
+        toActive = new IActivatable[activeObj.Length];
+
+        // Deactivate the Light;
+        for (int i =0; i < activeLight.Length; i++)
+        {
+            activeLight[i].SetActive(false);
+        }
+
+        // Get the game object that can be Interact;
+        for (int i = 0; i < activeObj.Length; i++)
+        {
+            toActive[i] = activeObj[i].GetComponent<IActivatable>();
+        }
+
+    }
+
+    public void Activate()
+    {
+        // Activate the game object that can be Interact;
+        for (int i = 0; i < activeObj.Length; i++)
+        {
+            toActive[i].Activate();
+        }
+        // Deactivate the Light;
+        for (int i = 0; i < activeLight.Length; i++)
+        {
+            activeLight[i].SetActive(true);
+        }
+
+    }
+
+    public void Deactivate()
+    {
+        throw new System.NotImplementedException();
+    }
+
+}
