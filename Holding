@@ -1,0 +1,111 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Holding : MonoBehaviour
+{
+    [Header("Presets")]
+    [SerializeField] private float rayLength = 6f;
+
+    [Header("Configurable")]
+    [SerializeField] private LayerMask holdingMask;
+    [SerializeField] GameObject holdUI = null;
+    [SerializeField] GameObject throwUIRef = null;
+    public static GameObject ThrowUI = null;
+
+
+    public IHoldable item;         //gameobject that contain Iholdable scripts
+    public IHoldable holding;
+
+    public static bool holdEnabled = true;
+    bool holdingItem;
+
+    private void Start()
+    {
+        ThrowUI = throwUIRef;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+        if (holding == null)
+        {
+            if (holdEnabled)
+            {
+                item = DetectItem();
+            }
+            else
+            {
+                holdUI.SetActive(false);
+                item = null;
+               
+            }
+
+            if (item == null)
+                return;
+        }
+
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (holding == null)        // if Im not picking any item
+            {
+                Debug.Log("Picking up item: " + item);
+                holding = item.PickUpItem();
+                holdingItem = true;
+                holdUI.SetActive(false);
+            }
+        }
+
+        if (Input.GetMouseButtonUp(0) && holding != null )
+        {
+            Debug.Log("Dropping item: " + holding);
+            holding.DropItem();
+            item = null;
+            holding = null;
+            holdingItem = false;
+        }
+
+        // throwing function
+        if (holdingItem == true)
+        {
+
+            if (Input.GetMouseButtonDown(1))
+            {
+                holding.ThrowItem();
+
+                item = null;
+                holding = null;
+                holdingItem = false;
+            }
+        }
+        else
+        {
+            ThrowUI.SetActive(false);
+        }
+    }
+
+
+    IHoldable DetectItem()
+    {
+        RaycastHit hit;
+        Vector3 fwd = transform.TransformDirection(Vector3.forward);
+
+        if (Physics.Raycast(transform.position, fwd, out hit, rayLength, holdingMask.value))
+        {
+            Debug.Log("I Cast the holding object");
+
+            IHoldable hold = hit.collider.GetComponent<IHoldable>();
+            if (hold != null)
+            {
+                holdUI.SetActive(true);
+                return hold;
+            }
+
+        }
+        holdUI.SetActive(false);
+        return null;
+    }
+
+}
