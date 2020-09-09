@@ -1,0 +1,128 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class Interact : MonoBehaviour
+{
+    [Header("Presets")]
+    [SerializeField] private float rayLength = 6f;
+    [SerializeField] GameObject interactUI = null;
+
+    [Header("Configurable")]
+    [SerializeField] private LayerMask layermaskInteract;
+    [SerializeField] private LayerMask layermaskObstacles;
+
+    private IInteractable currentTarget;
+    private bool isInteracting ;
+    KeyCode interactKey = KeyCode.E;
+
+
+    private void Start()
+    {
+        interactUI.SetActive(false);
+        currentTarget = null;
+        isInteracting = false;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        RaycastForInteractable();
+
+        if (currentTarget is IClickInteract) // && currentTarget.activated == true)
+        {
+
+             interactUI.SetActive(true);
+
+            if (Input.GetKeyDown(interactKey))
+            {
+                if (currentTarget != null)
+                {
+                    currentTarget.Interact();
+                }
+            }
+        }
+        else if (currentTarget is IHoldInteract)// && currentTarget.activated == true)
+        {
+            interactUI.SetActive(true);
+
+
+            if (Input.GetKey(interactKey))
+            {
+                //if (!isInteracting)
+                //{
+                    currentTarget.EnterInteract();
+                    interactUI.SetActive(false);
+                    isInteracting = true;
+                //}
+            }
+            else if (Input.GetKeyUp(interactKey))
+            {
+                isInteracting = false;
+                interactUI.SetActive(true);
+                currentTarget.ExitInteract();
+            }
+        }
+        else
+        {
+            interactUI.SetActive(false);
+        }
+    }
+
+    private void RaycastForInteractable()
+    {
+        // Raycast                                                                                  //Raycast 
+        RaycastHit hit;
+        float hitDistance;
+        Vector3 fwd = transform.TransformDirection(Vector3.forward);
+        Debug.DrawRay(this.transform.position, fwd * rayLength, Color.red);                         // draw raycast line
+
+        if (Physics.Raycast(transform.position, fwd, out hit, rayLength, layermaskInteract.value))
+        {
+            
+            IInteractable interactable = hit.collider.GetComponent<IInteractable>(); 
+            if(interactable != null)
+            {
+
+                    if (interactable == currentTarget)
+                    {
+                        return;
+                    }
+                    else if (currentTarget != null)
+                    {
+                        currentTarget.ExitInteract();
+                        currentTarget = interactable;
+                        currentTarget.EnterInteract();
+                        return;
+                    }
+                    else
+                    {   // if the currentTarget is null
+                        currentTarget = interactable;
+                        currentTarget.EnterInteract();
+                        return;
+                    }
+
+            }
+            else
+            {
+                if(currentTarget != null)
+                {
+                    currentTarget.ExitInteract();
+                    currentTarget = null;
+                    return;
+                }
+            }
+        }
+        else
+        {
+            if (currentTarget != null)
+            {
+                currentTarget.ExitInteract();
+                currentTarget = null;
+                return;
+            }
+        }
+    }
+
+}
