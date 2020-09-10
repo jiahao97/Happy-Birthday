@@ -1,0 +1,75 @@
+using UnityEngine;
+using stateStuff;
+
+public class InvestigateState : State<AI>
+{
+    private static InvestigateState _instance;
+    private Vector3 investLocation;
+
+    private InvestigateState()
+    {
+        if (_instance != null)
+        {
+            return;
+        }
+        _instance = this;
+
+    }
+
+    public static InvestigateState Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                new InvestigateState();
+            }
+
+            return _instance;
+        }
+    }
+
+    public override void EnterState(AI _owner)
+    {
+        Debug.Log("Entering Investigating State");
+        EnemyManager.AIState.Add(AI.AIState.Investigating);
+
+        _owner.currentState = AI.AIState.Investigating;
+        investLocation =_owner.GetComponent<NoiseDetection>().investigateLocation.transform.position;
+
+        _owner.anim.SetBool("Patrol", true);
+    }
+
+    public override void ExitState(AI _owner)
+    {
+        Debug.Log("Exiting Investigating State");
+        EnemyManager.AIState.Remove(AI.AIState.Investigating);
+
+        //_owner.switchState = !_owner.switchState;
+        _owner.GetComponent<NoiseDetection>().isInventigating = false;
+
+        _owner.anim.SetBool("Patrol", false);
+    }
+
+    public override void UpdateState(AI _owner)
+    {
+        if (_owner.currentState != AI.AIState.Investigating) return;
+
+
+        _owner.agent.destination = investLocation;
+
+
+        //goto the investigation location
+        if (!_owner.agent.pathPending && _owner.agent.remainingDistance < 1f)
+        {
+            _owner.StartCoroutine(_owner.Cooldown());
+        }
+
+        // Change AI State = Chasing     
+        if (_owner.seekPlayer)// && !_owner.switchState)
+        {
+            _owner.stateMachine.ChangeState(ChasingState.Instance);
+        }
+    }
+ 
+}
