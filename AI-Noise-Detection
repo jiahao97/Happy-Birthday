@@ -1,0 +1,34 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class NoiseDetection : MonoBehaviour
+{
+    AI ai;
+    [HideInInspector]public Transform investigateLocation;
+    [HideInInspector]public bool isInventigating = false;
+    // Start is called before the first frame update
+    void Start()
+    {
+        ai = GetComponent<AI>();   
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!ai.isAwake) return;
+
+        if(other.tag == "Noise" && !ai.seekPlayer)
+        {
+            investigateLocation = other.gameObject.transform;
+            Debug.Log("detected sound");
+
+            if (!isInventigating)
+            {
+                ai.stateMachine.ChangeState(InvestigateState.Instance); //switch to investigation state;
+                isInventigating = true;
+            }
+               
+            
+        }
+    }
+}
