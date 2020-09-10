@@ -1,0 +1,41 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Jump : MonoBehaviour
+{
+    [Header("Configable")]
+    public float gravity = -19.62f;
+    public float jumpHeight = 1.5f;
+    public float groundDistance = 0.2f;
+
+    [Header("Preset")]
+    public Transform groundCheck;
+    public LayerMask groundMask;
+
+    [Header("Debug")]
+    private Vector3 velocity;
+    private bool isGrounded;
+
+    // Update is called once per frame
+    void Update()
+    {
+        // Check isGrounded                                                                                // isGrounded
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+
+        if (isGrounded && velocity.y < 0)
+        {
+            velocity.y = -(jumpHeight);
+        }
+
+        // Jump                                                                                             // Jump
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            velocity.y += Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+
+        // control the velocity Y                                                                           // control the Velocity Y
+        velocity.y += gravity * Time.deltaTime;
+        PlayerMovement.controller.Move(velocity * Time.deltaTime);
+    }
+}
