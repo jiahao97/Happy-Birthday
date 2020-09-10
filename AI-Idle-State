@@ -1,0 +1,65 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using stateStuff;
+
+public class IdleState : State<AI>
+{
+    private static IdleState _instance;
+
+    private IdleState()
+    {
+        if (_instance != null)
+        {
+            return;
+        }
+        _instance = this;
+
+    }
+
+    public static IdleState Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                new IdleState();
+            }
+
+            return _instance;
+        }
+    }
+
+    public override void EnterState(AI _owner)
+    {
+
+        EnemyManager.AIState.Add(AI.AIState.Idle);
+        _owner.currentState = AI.AIState.Idle;
+
+        _owner.anim.SetBool("Awake",true);                  // set anim boolean =  true to trigger Idle Animation
+
+    }
+
+    public override void ExitState(AI _owner)
+    {
+        EnemyManager.AIState.Remove(AI.AIState.Idle);
+
+        if (_owner.agent.isActiveAndEnabled)
+        {
+            _owner.agent.isStopped = false;                    // let the Mannequin to Move Around
+        }
+    }
+
+    public override void UpdateState(AI _owner)
+    {
+        // hold the Mannequin in Position
+       _owner.agent.isStopped = true;
+
+        if (_owner.seekPlayer)
+        {
+            _owner.stateMachine.ChangeState(ChasingState.Instance);
+        }
+    }
+
+}
+
