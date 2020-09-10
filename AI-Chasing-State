@@ -1,0 +1,84 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using stateStuff;
+
+public class ChasingState : State<AI>
+{
+    private static ChasingState _instance;
+    private float RotationSpeed = 15f;
+    Transform target;
+
+
+    private ChasingState()
+    {
+        if (_instance != null)
+        {
+            return;
+        }
+        _instance = this;
+    }
+
+    public static ChasingState Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                new ChasingState();
+            }
+
+            return _instance;
+        }
+    }
+
+
+    public override void EnterState(AI _owner)
+    {
+
+        EnemyManager.AIState.Add(AI.AIState.Chasing);
+        target = PlayerManager.instance.player.transform;
+
+        _owner.currentState = AI.AIState.Chasing;
+        _owner.anim.SetBool("SeekPlayer", true);
+    }
+
+    public override void ExitState(AI _owner)
+    {
+
+        EnemyManager.AIState.Remove(AI.AIState.Chasing);
+
+        //_owner.switchState = !_owner.switchState;
+        _owner.anim.SetBool("SeekPlayer", false);
+    }
+
+    public override void UpdateState(AI _owner)
+    {
+        float distance = Vector3.Distance(target.position, _owner.transform.position);
+
+        // If in Sight, chase player.
+        _owner.agent.SetDestination(target.position);
+
+        //Face Target
+        Vector3 direction = (target.position - _owner.transform.position).normalized;
+        Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
+        _owner.transform.rotation = Quaternion.Slerp(_owner.transform.rotation, lookRotation, Time.deltaTime * RotationSpeed);
+
+            //If in Attack Range
+            if (distance <= 3f)
+            {
+                Debug.Log("Player Death");
+            }
+
+
+        // Change AI State  = Pratolling    
+        if (!_owner.seekPlayer) // && _owner.switchState)
+        {
+            _owner.stateMachine.ChangeState(PatrolState.Instance);
+        }
+
+    }
+
+
+}
+
