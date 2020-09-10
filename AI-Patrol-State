@@ -1,0 +1,77 @@
+using UnityEngine;
+using stateStuff;
+
+public class PatrolState : State<AI>
+{
+    private static PatrolState _instance;
+    private int destPoints = 0;
+    //private string animClip = "AI_Walking";
+
+    private PatrolState()
+    {
+        if(_instance != null ){
+            return;
+        }
+        _instance = this;
+
+    }
+
+    public static PatrolState Instance
+    {
+        get
+        {
+            if(_instance == null)
+            {
+                new PatrolState();
+            }
+
+            return _instance;
+        }
+    }
+
+    public override void EnterState(AI _owner)
+    {
+        
+        EnemyManager.AIState.Add(AI.AIState.Patrolling);
+
+        _owner.currentState = AI.AIState.Patrolling;
+        _owner.anim.SetBool("Patrol", true);
+    }
+
+    public override void ExitState(AI _owner)
+    {
+
+        EnemyManager.AIState.Remove(AI.AIState.Patrolling);
+
+        //_owner.switchState = !_owner.switchState;
+        _owner.anim.SetBool("Patrol", false);
+    }
+
+    public override void UpdateState(AI _owner)
+    {
+        
+       // patrolling when not see the player and not investigating;
+        if (!_owner.agent.pathPending && _owner.agent.remainingDistance < 2f && _owner.currentState == AI.AIState.Patrolling)
+        {
+            //_owner.GoToNextPoint();
+            if (_owner.patrolPoints.Length == 0)
+            {
+                Debug.LogError("You must setup the patrol points 1st");
+                _owner.agent.enabled = false;
+                return;
+            }
+
+            _owner.agent.destination = _owner.patrolPoints[destPoints].position;
+            destPoints = (destPoints + 1) % _owner.patrolPoints.Length;
+
+        }
+
+        // Change AI State = Chasing     
+        if (_owner.seekPlayer)// && !_owner.switchState)
+        {
+            _owner.stateMachine.ChangeState(ChasingState.Instance);
+        }
+
+    }
+
+}
