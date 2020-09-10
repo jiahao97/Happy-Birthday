@@ -1,0 +1,80 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class EnemyManager : MonoBehaviour
+{
+    [Header("Debug")]
+    public GameObject[] enemyObject;
+    public static List<AI.AIState> AIState = new List<AI.AIState>();
+    public List<AI.AIState> templist = new List<AI.AIState>();
+    
+    AI ai;
+    FieldOfView fov;
+
+    public int aiQuantitie;
+
+    //private Coroutine[] enemyResetCoroutine;
+    private List<Coroutine> enemyResetCoroutine;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        // Get Component
+        fov = PlayerManager.instance.player.GetComponent<FieldOfView>();
+        ai = GetComponent<AI>();
+        
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        templist = AIState;
+
+        // to wake up the enemy and patrolling
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            AwakeAI();
+        }
+
+        //  enemy set patrolling
+        if (Input.GetKeyDown(KeyCode.Y))
+        {
+            PatrolAI();
+        }
+
+    }
+
+    public void AwakeAI()
+    {
+        for (int i = 0; i < aiQuantitie; i++)
+        {
+            if(enemyObject[i].GetComponent<AI>().shutDown == true)
+            {
+                enemyObject[i].GetComponent<AI>().resettingRagdoll.resetRagdoll();
+                enemyObject[i].GetComponent<AI>().StartCoroutine(enemyObject[i].GetComponent<AI>().resettingRagdoll.ResetRagdollPosition());
+
+                //if (enemyResetCoroutine[i] != null )
+                //{
+                //    enemyResetCoroutine[i] = enemyObject[i].GetComponent<AI>().StartCoroutine(enemyObject[i].GetComponent<AI>().resettingRagdoll.ResetRagdollPosition());      // start moving the rigbidbody
+                //}
+            }
+            else
+            {
+                enemyObject[i].GetComponent<AI>().isAwake = true;
+                enemyObject[i].GetComponent<AI>().StartCoroutine(enemyObject[i].GetComponent<AI>().ChangeToPatrolState());
+            }
+        }
+    }
+
+    public void PatrolAI()
+    {
+        for (int i = 0; i < aiQuantitie; i++)
+        {
+            enemyObject[i].GetComponent<AI>().anim.SetBool("Patrol", true);
+            enemyObject[i].GetComponent<AI>().stateMachine.ChangeState(PatrolState.Instance);
+        }
+    }
+
+}
