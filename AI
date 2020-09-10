@@ -1,0 +1,184 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.AI;
+using stateStuff;
+
+[RequireComponent(typeof(NavMeshAgent))]
+public class AI : MonoBehaviour
+{
+    public enum AIState { Sleep, Idle, Chasing, Patrolling, Attack, Investigating }
+    [HideInInspector] public NavMeshAgent agent;
+    [HideInInspector] public Animator anim;
+    [HideInInspector] public FieldOfView fov;
+    [HideInInspector] public ResettingRagdoll resettingRagdoll;
+
+    [Header("Debug")]
+    public AIState currentState;
+    public bool canAction = true;
+    public bool seekPlayer = false;
+    public bool inRange = false;
+    public bool isAwake = false;
+    public bool shutDown = false;
+
+    [Header("Preset")]
+    public Transform[] patrolPoints;        // preset the AI patrol path points
+    public GameObject _ragDoll;             // preset the AI Ragdoll
+    public GameObject _animatedModel;       // preset the Ai animated Model
+    public GameObject AISightView;          // preset the Ai sight view
+    public float cooldownTime;              // set the cooldown for the investigation time
+    public bool sitting;                    // set the motion of the ai for awake animation
+   
+    public StateMachine<AI> stateMachine { get; set; }
+
+    private void Awake()
+    {
+        _ragDoll.gameObject.SetActive(false);
+    }
+
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        // Get components
+        fov = GetComponentInChildren<FieldOfView>();
+        agent = GetComponent<NavMeshAgent>();
+        anim = GetComponentInChildren<Animator>();
+        resettingRagdoll = GetComponent<ResettingRagdoll>();
+
+        // State Machine
+        stateMachine = new StateMachine<AI>(this);                  // this must be run 1st before you calling the changestate.
+        stateMachine.ChangeState(IdleState.Instance);               // change to the first state
+
+        // preset the AI motion before its awake
+        if (sitting)
+        {
+            anim.SetTrigger("Sitting");
+            anim.SetFloat("WakeUpSpeed", 1f);
+        }
+        else
+        {
+            anim.SetTrigger("FaceDown");
+            anim.SetFloat("WakeUpSpeed", 1f);
+        }
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        // if Mannequin is Awake then Do...
+        if (isAwake) {
+
+            AISightView.SetActive(true);
+            seekPlayer = fov.seeTarget;
+            resettingRagdoll.GetChildPositions();
+
+            if (canAction)
+            {
+                anim.speed = 1f;
+            }
+        } 
+        else
+        {
+            AISightView.SetActive(false);
+            seekPlayer = false;
+
+            if (!shutDown)
+            {
+                anim.speed = 0f;
+            }
+            else
+            {
+                anim.speed = 1f;
+            }
+        }
+
+        // Update the stateMachine
+        if (agent.enabled == true)
+        {
+           stateMachine.update();
+        }
+
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        // stop the enemy at the corner
+        if(other.tag == "Player" && inRange == false)
+        {
+            canAction = false;
+            agent.isStopped = true;
+            inRange = true;
+        }
+
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.tag == "Player" && inRange == true)
+        {
+            canAction = true;
+            agent.isStopped = false;
+            inRange = false;
+        }
+    }
+
+    #region Freeze AI
+
+    public void Freezed()
+    {
+        if (isAwake)
+        {
+            agent.enabled =false;
+            //agent.isStopped = true;
+            anim.speed = 0f;
+        }
+        canAction = false;
+    }
+
+    public void Unfreezed()
+    {
+        if (isAwake)
+        {
+            agent.enabled = true;             // using Agent.enabled will cut of current path and move to next path
+            //agent.isStopped = false;        // AI will sliding but will keep moving to the current path
+            anim.speed = 1f;
+        }
+        canAction = true;
+    }
+
+    #endregion
+
+
+    public void ResetAI()
+    {
+        if (!seekPlayer && isAwake)
+        {
+            stateMachine.ChangeState(SleepState.Instance);               // set back to idle state
+            shutDown = true;
+            isAwake = false;
+            anim.SetFloat("WakeUpSpeed", 0f);
+            Invoke("WakeUp", 3f);
+        }
+    }
+
+    public void WakeUp()
+    {
+        resettingRagdoll.GetChildPositions();
+        resettingRagdoll.resetRagdoll();
+        StartCoroutine(resettingRagdoll.ResetRagdollPosition());
+    }
+
+    public IEnumerator Cooldown()               // investigation cooldown
+    {
+        yield return new WaitForSeconds(cooldownTime);
+        stateMachine.ChangeState(PatrolState.Instance);
+    }
+
+    public IEnumerator ChangeToPatrolState()
+    {
+        yield return new WaitForSeconds(3f);
+        stateMachine.ChangeState(PatrolState.Instance);               // change to the patrol state
+    }
+
+}
