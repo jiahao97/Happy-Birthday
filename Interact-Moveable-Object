@@ -1,0 +1,45 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[RequireComponent(typeof(Animator))]
+public class MoveableObject : MonoBehaviour, IClickInteract
+{
+    private Animator anim;
+    const string animBoolName = "open";
+    public bool activated { get; set; }
+    private bool open;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        anim = GetComponent<Animator>();
+        activated = true;
+        open = false;
+    }
+
+    public void Interact()
+    {
+        if (!open)
+        {
+            anim.SetBool(animBoolName, true);
+           
+        }
+        else
+        {
+            anim.SetBool(animBoolName, false);
+            open = !open;
+        }
+    }
+
+    public void EnterInteract()
+    {
+        // show UI
+    }
+
+    public void ExitInteract()
+    {
+        // disable UI
+    }
+
+}
