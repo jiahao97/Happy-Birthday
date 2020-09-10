@@ -1,0 +1,130 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class ResettingRagdoll : MonoBehaviour
+{
+    //components
+    AI ai;
+    bool resetting;
+
+    [Header("presets")]
+    public GameObject EnemyParent;
+
+    public Rigidbody[] _ragdollrigidbodies;
+    public Transform[] AnimatedModelTransform;
+    public Vector3[] AnimatedModelVector3;
+    public Transform[] ragdollTansform;
+    public Vector3[] ragdollVector3;
+
+    [HideInInspector] public Animator zomAnim;
+
+    // Use this for initialization
+    void Start()
+    {
+        GetChildPositions();
+        ai = GetComponentInParent<AI>();
+    }
+
+    public void GetChildPositions()
+    {
+        // get model vector 3 position
+        for (int i = 0; i < AnimatedModelVector3.Length; i++)
+        {
+            AnimatedModelVector3[i] = AnimatedModelTransform[i].transform.position;
+        }
+
+        // get ragdoll vector 3 position
+        for (int i = 0; i < ragdollVector3.Length; i++)
+        {
+            ragdollVector3[i] = ragdollTansform[i].transform.position;
+        }
+    }
+
+    public void ReturnChildPositions()
+    {
+        // Return model position
+        for (int i = 0; i < AnimatedModelTransform.Length; i++)
+        {
+            AnimatedModelTransform[i].position = AnimatedModelVector3[i];
+        }
+        // Return Ragdoll position
+        for (int i = 0; i < ragdollTansform.Length; i++)
+        {
+            ragdollTansform[i].position = ragdollVector3[i];
+        }
+    }
+
+    public void resetRagdoll()
+    {
+        for (int i = 0; i < _ragdollrigidbodies.Length; i++)
+        {
+            _ragdollrigidbodies[i].useGravity = false;
+            _ragdollrigidbodies[i].isKinematic = true;
+            _ragdollrigidbodies[i].Sleep();
+        }
+        resetting = true;
+    }
+
+    public void AfterReset()
+    {
+        for (int i = 0; i < _ragdollrigidbodies.Length; i++)
+        {
+            _ragdollrigidbodies[i].useGravity = true;
+            _ragdollrigidbodies[i].isKinematic = false;
+            _ragdollrigidbodies[i].WakeUp();
+        }
+        StartCoroutine(DeactiveRagdoll());
+    }
+
+    public IEnumerator DeactiveRagdoll()
+    {
+        ai.anim.SetFloat("WakeUpSpeed", 1f);            /// ***
+
+        ai._ragDoll.gameObject.SetActive(false);                //deactive the ragdoll
+        ai._animatedModel.gameObject.SetActive(true);           // active the game object
+
+        //ai.stateMachine.ChangeState(IdleState.Instance);
+        ai.isAwake = true;
+        ai.shutDown = false;
+
+        yield return new WaitForSeconds(3f);
+
+        ai.stateMachine.ChangeState(IdleState.Instance);        //***
+        ai.anim.SetFloat("WakeUpSpeed", 0f);            //***
+        resetting = false;
+        yield return null;
+    }
+
+    public IEnumerator ResetRagdollPosition()   //put in update..
+    {
+        float totalMovementTime = 5f; //the amount of time you want the movement to take
+        float currentMovementTime = 0f;//The amount of time that has passed
+
+        Invoke("AfterReset", 5f);
+
+        while (resetting)        // only run 1 time;
+        {
+            // move the rigidbodies to the model location.
+            for (int i = 0; i < _ragdollrigidbodies.Length; i++)
+            {
+                currentMovementTime += Time.deltaTime;
+                Vector3 targetPos = Vector3.Lerp(_ragdollrigidbodies[i].position, AnimatedModelVector3[i], currentMovementTime / totalMovementTime);
+                _ragdollrigidbodies[i].MovePosition(targetPos);
+                _ragdollrigidbodies[i].MoveRotation(Quaternion.Lerp(_ragdollrigidbodies[i].rotation, AnimatedModelTransform[i].localRotation, currentMovementTime / totalMovementTime));       // rotate from A to B with lerp
+            }
+
+            //for (int i = 0; i < AnimatedModelTransform.Length; i++)
+            //{
+            //    currentMovementTime += Time.deltaTime;
+            //    Vector3 targetPos = Vector3.Lerp(AnimatedModelTransform[i].position, _ragdollrigidbodies[i].position, currentMovementTime / totalMovementTime);
+            //    AnimatedModelTransform[i].rotation = (Quaternion.Lerp(AnimatedModelTransform[i].rotation, _ragdollrigidbodies[i].rotation, currentMovementTime / totalMovementTime));       // rotate from A to B with lerp
+            //}
+            //yield return null;
+            yield return new WaitForSeconds(0.1f);            
+        }
+        //yield return new WaitForSeconds(2f);        // need to change later 
+       // AfterReset();
+    }
+
+}
