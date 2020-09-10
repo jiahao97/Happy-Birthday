@@ -1,0 +1,55 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Crouch : MonoBehaviour
+{
+    private float OriSpeed;
+    private bool crounching;
+    public bool onTop;
+
+    [Header("Presets")]
+    public Transform topCheck;
+    public float CrounchSpeed;
+    public LayerMask topMask;
+
+    private void Start()
+    {
+        OriSpeed = GetComponent<PlayerMovement>().PlayerSpeed;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        // Check isGrounded                                                                                // isGrounded
+        onTop = Physics.CheckSphere(topCheck.position, 0.2f, topMask);
+
+        if (!onTop)
+        {
+            if (Input.GetKeyDown(KeyCode.LeftControl))
+            {
+                PlayerMovement.controller.height = PlayerMovement.controller.height / 2;
+                GetComponent<PlayerMovement>().PlayerSpeed = CrounchSpeed;
+            }
+            else if (Input.GetKeyUp(KeyCode.LeftControl))
+            {
+                PlayerMovement.controller.height = 3f;
+                GetComponent<PlayerMovement>().PlayerSpeed = OriSpeed;
+            }
+
+            if (crounching)
+            {
+                PlayerMovement.controller.height = 3f;
+                GetComponent<PlayerMovement>().PlayerSpeed = OriSpeed;
+                crounching = false;
+            }
+        }
+        else
+        {
+            PlayerMovement.controller.height = PlayerMovement.controller.height / 2;
+            GetComponent<PlayerMovement>().PlayerSpeed = CrounchSpeed;
+            crounching = true;
+        }
+        
+    }
+}
