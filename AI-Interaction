@@ -1,0 +1,83 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class AIInteract : MonoBehaviour
+{
+    [SerializeField] private float rayLength = 6f;
+    [SerializeField] private LayerMask layermaskInteract;
+    private IInteractable currentTarget;
+
+    // Update is called once per frame
+    void Update()
+    {
+        RaycastForInteractable();
+
+        if(currentTarget !=null)
+        {
+            if (!currentTarget.activated)
+            {
+                currentTarget.Interact();
+            }
+        }
+        else
+        {
+            return;
+        }
+
+    }
+
+    private void RaycastForInteractable()
+    {
+        // Raycast                                                                                  //Raycast 
+        RaycastHit hit;
+        Vector3 fwd = transform.TransformDirection(Vector3.forward);
+        Debug.DrawRay(this.transform.position, fwd * rayLength, Color.red);                         // draw raycast line
+
+        if (Physics.Raycast(transform.position, fwd, out hit, rayLength, layermaskInteract.value))
+        {
+            IInteractable interactable = hit.collider.GetComponent<IInteractable>();
+            if (interactable != null)
+            {
+
+                if (interactable == currentTarget)
+                {
+                    return;
+                }
+                else if (currentTarget != null)
+                {
+                    currentTarget.ExitInteract();
+                    currentTarget = interactable;
+                    currentTarget.EnterInteract();
+                    return;
+                }
+                else
+                {   // if the currentTarget is null
+                    currentTarget = interactable;
+                    currentTarget.EnterInteract();
+                    return;
+                }
+
+            }
+            else
+            {
+                if (currentTarget != null)
+                {
+                    currentTarget.ExitInteract();
+                    currentTarget = null;
+                    return;
+                }
+            }
+        }
+        else
+        {
+            if (currentTarget != null)
+            {
+                currentTarget.ExitInteract();
+                currentTarget = null;
+                return;
+            }
+        }
+    }
+
+}
