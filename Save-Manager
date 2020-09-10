@@ -1,0 +1,20 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class SaveManger : MonoBehaviour
+{
+    //public GameObject SaveMenu;
+
+    public void OnTriggerEnter(Collider other)
+    {
+        Cursor.lockState = CursorLockMode.None;
+
+    }
+
+    public void OnTriggerExit(Collider other)
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+
+    }
+}
